@@ -31,6 +31,7 @@ def magazzino():
     return open("magazzino.html").read()
 
 @app.route("/inserisci")
+@app.route("/inserisci.html")
 def inserisci():
     return open("inserisci.html").read()
 
