@@ -1,1 +1,31 @@
-...
+
+<!DOCTYPE html>
+<html>
+<head><title>Inserisci Consumi</title></head>
+<body>
+    <h1>Inserisci Consumi</h1>
+    <form id="formConsumi">
+        <label>Struttura:
+            <select name="struttura">
+                <option value="Prati">Prati</option>
+                <option value="Trastevere">Trastevere</option>
+            </select>
+        </label><br>
+        <label>Lenzuola Matrimoniali: <input name="bianche_matrimoniali" type="number" value="0"></label><br>
+        <button type="submit">Invia</button>
+    </form>
+    <script>
+        document.getElementById("formConsumi").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const dati = Object.fromEntries(new FormData(e.target).entries());
+            for (let key in dati) dati[key] = isNaN(+dati[key]) ? dati[key] : +dati[key];
+            await fetch("/api/consumi", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(dati)
+            });
+            alert("Consumo registrato!");
+        });
+    </script>
+</body>
+</html>

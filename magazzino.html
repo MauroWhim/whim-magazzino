@@ -1,1 +1,23 @@
-...
+
+<!DOCTYPE html>
+<html>
+<head><title>Magazzino</title></head>
+<body>
+    <h1>Magazzino</h1>
+    <select id="sede">
+        <option value="Prati">Prati</option>
+        <option value="Trastevere">Trastevere</option>
+    </select>
+    <pre id="output"></pre>
+    <script>
+        async function aggiorna() {
+            const sede = document.getElementById("sede").value;
+            const res = await fetch("/api/giacenze?sede=" + sede);
+            const json = await res.json();
+            document.getElementById("output").textContent = JSON.stringify(json, null, 2);
+        }
+        document.getElementById("sede").addEventListener("change", aggiorna);
+        aggiorna();
+    </script>
+</body>
+</html>

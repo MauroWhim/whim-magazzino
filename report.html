@@ -1,1 +1,18 @@
-...
+
+<!DOCTYPE html>
+<html>
+<head><title>Report</title></head>
+<body>
+    <h1>Report Mensile</h1>
+    <form action="/export-csv" method="GET">
+        <label>Mese (es. 2025-06): <input name="mese" type="text"></label><br>
+        <label>Sede:
+            <select name="sede">
+                <option value="Prati">Prati</option>
+                <option value="Trastevere">Trastevere</option>
+            </select>
+        </label><br>
+        <button type="submit">Scarica Report CSV</button>
+    </form>
+</body>
+</html>
