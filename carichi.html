@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head><title>Registra Carichi</title></head>
+<body>
+<h1>Registra Carichi</h1>
+<form id="carico-form">
+  Struttura:
+  <select name="struttura">
+    <option value="Prati">Prati</option>
+    <option value="Trastevere">Trastevere</option>
+  </select><br><br>
+  Lenzuola Bianche Matrimoniali: <input type="number" name="bianche_matrimoniali"><br>
+  Lenzuola Bianche Singole: <input type="number" name="bianche_singole"><br>
+  Lenzuola Bambù Matrimoniali: <input type="number" name="bambu_matrimoniali"><br>
+  Lenzuola Bambù Singole: <input type="number" name="bambu_singole"><br>
+  Federe: <input type="number" name="federe"><br>
+  Bidet: <input type="number" name="bidet"><br>
+  Viso: <input type="number" name="viso"><br>
+  Doccia: <input type="number" name="doccia"><br>
+  Tappeto: <input type="number" name="tappeto"><br>
+  Cialde: <input type="number" name="cialde"><br>
+  Bevande: <input type="number" name="bevande"><br>
+  Dolci: <input type="number" name="dolci"><br>
+  Salati: <input type="number" name="salati"><br><br>
+  <button type="submit">Registra Carico</button>
+</form>
+<script>
+document.getElementById("carico-form").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const dati = Object.fromEntries(new FormData(e.target));
+  const resp = await fetch("/api/carichi", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(dati)
+  });
+  const json = await resp.json();
+  alert(json.ok ? "Carico registrato!" : "Errore");
+  e.target.reset();
+});
+</script>
+</body>
+</html>
