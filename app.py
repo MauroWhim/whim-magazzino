@@ -30,6 +30,10 @@ def carichi():
 def magazzino():
     return open("magazzino.html").read()
 
+@app.route("/inserisci")
+def inserisci():
+    return open("inserisci.html").read()
+
 @app.route("/api/consumi", methods=["POST"])
 def salva_consumi():
     dati = request.json
