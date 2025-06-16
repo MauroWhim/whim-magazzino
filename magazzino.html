@@ -1,9 +1,68 @@
 <!DOCTYPE html>
-<html>
-<head><title>Magazzino</title></head>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Magazzino - Giacenze</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 30px;
+      background: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+    }
+    select, button {
+      font-size: 18px;
+      padding: 5px 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
 <body>
-<h1>Visualizza Magazzino</h1>
-<p><a href="/api/giacenze?sede=Prati">📍 Vedi Giacenze Prati</a></p>
-<p><a href="/api/giacenze?sede=Trastevere">📍 Vedi Giacenze Trastevere</a></p>
+  <h1>Visualizza Magazzino</h1>
+  <label for="sede">Sede:</label>
+  <select id="sede">
+    <option value="Prati">Prati</option>
+    <option value="Trastevere">Trastevere</option>
+  </select>
+  <button onclick="caricaGiacenze()">Mostra Giacenze</button>
+
+  <table id="tabella">
+    <thead>
+      <tr><th>Articolo</th><th>Giacenza</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    function caricaGiacenze() {
+      const sede = document.getElementById("sede").value;
+      fetch(`/api/giacenze?sede=${sede}`)
+        .then(res => res.json())
+        .then(dati => {
+          const corpo = document.querySelector("#tabella tbody");
+          corpo.innerHTML = "";
+          for (const articolo in dati) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${articolo.replaceAll('_', ' ')}</td><td>${dati[articolo]}</td>`;
+            corpo.appendChild(tr);
+          }
+        });
+    }
+  </script>
 </body>
 </html>
