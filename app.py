@@ -1,114 +1,111 @@
-
-from flask import Flask, request, jsonify, Response, send_file
+from flask import Flask, render_template, request, jsonify
 import json
 import os
 from datetime import datetime
 
 app = Flask(__name__)
-DATA_FILE = "data.json"
 
+DATA_FILE = 'data.json'
+
+ARTICOLI = [
+    ("bianche_matrimoniali", 0.90),
+    ("bianche_singole", 0.80),
+    ("bambu_matrimoniali", 1.20),
+    ("bambu_singole", 1.00),
+    ("federe", 0.60),
+    ("bidet", 0.40),
+    ("viso", 0.60),
+    ("doccia", 1.20),
+    ("tappeto", 0.70),
+    ("cialde", 0),
+    ("bevande", 0),
+    ("dolci", 0),
+    ("salati", 0)
+]
+
+# Assicura che il file esista
 if not os.path.exists(DATA_FILE):
-    with open(DATA_FILE, "w") as f:
-        json.dump({"consumi": [], "carichi": []}, f)
+    with open(DATA_FILE, 'w') as f:
+        json.dump({"carichi": [], "consumi": []}, f)
 
 def carica_dati():
-    with open(DATA_FILE, "r") as f:
+    with open(DATA_FILE, 'r') as f:
         return json.load(f)
 
 def salva_dati(dati):
-    with open(DATA_FILE, "w") as f:
+    with open(DATA_FILE, 'w') as f:
         json.dump(dati, f, indent=2)
 
-PREZZI = {
-    "bianche_matrimoniali": 0.90,
-    "bianche_singole": 0.80,
-    "bambu_matrimoniali": 1.20,
-    "bambu_singole": 1.00,
-    "federe": 0.60,
-    "bidet": 0.40,
-    "viso": 0.60,
-    "doccia": 1.20,
-    "tappeto": 0.70,
-    "cialde": 0.00,
-    "bevande": 0.00,
-    "dolci": 0.00,
-    "salati": 0.00
-}
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-@app.route("/")
-def home():
-    return send_file("index.html")
-
-@app.route("/inserisci")
+@app.route('/inserisci')
 def inserisci():
-    return send_file("inserisci.html")
+    return render_template('inserisci.html', articoli=ARTICOLI)
 
-@app.route("/carichi")
+@app.route('/carichi')
 def carichi():
-    return send_file("carichi.html")
+    return render_template('carichi.html', articoli=ARTICOLI)
 
-@app.route("/magazzino")
+@app.route('/magazzino')
 def magazzino():
-    return send_file("magazzino.html")
+    return render_template('magazzino.html')
 
-@app.route("/report")
+@app.route('/report')
 def report():
-    return send_file("report.html")
+    return render_template('report.html')
 
-@app.route("/api/consumi", methods=["POST"])
-def salva_consumi():
-    dati = request.json
-    struttura = dati.get("struttura", "").strip()
-    if not struttura:
-        return jsonify({"error": "Struttura mancante"}), 400
-    tutti_dati = carica_dati()
-    dati["timestamp"] = datetime.now().isoformat()
-    tutti_dati["consumi"].append(dati)
-    salva_dati(tutti_dati)
-    return jsonify({"ok": True})
-
-@app.route("/api/carichi", methods=["POST"])
-def salva_carichi():
-    dati = request.json
-    struttura = dati.get("struttura", "").strip()
-    if not struttura:
-        return jsonify({"error": "Struttura mancante"}), 400
-    dati["timestamp"] = datetime.now().isoformat()
-    dati["totale"] = sum(dati.get(k, 0) * PREZZI.get(k, 0) for k in PREZZI)
-    tutti_dati = carica_dati()
-    tutti_dati["carichi"].append(dati)
-    salva_dati(tutti_dati)
-    return jsonify({"ok": True, "totale": dati["totale"]})
-
-@app.route("/api/giacenze")
-def api_giacenze():
-    sede = request.args.get("sede", "").capitalize()
-    if sede not in ["Prati", "Trastevere"]:
-        return jsonify({"error": "Sede non valida"}), 400
+@app.route('/api/aggiungi_consumo', methods=['POST'])
+def aggiungi_consumo():
     dati = carica_dati()
-    articoli = list(PREZZI.keys())
-    giacenze = {}
-    for articolo in articoli:
-        carico = sum(c.get(articolo, 0) for c in dati["carichi"] if c.get("struttura") == sede)
-        consumo = sum(c.get(articolo, 0) for c in dati["consumi"] if c.get("struttura") == sede)
-        giacenze[articolo] = carico - consumo
-    return jsonify(giacenze)
+    nuovo = request.json
+    nuovo["timestamp"] = datetime.now().isoformat()
+    dati["consumi"].append(nuovo)
+    salva_dati(dati)
+    return '', 204
 
-@app.route("/api/report")
+@app.route('/api/aggiungi_carico', methods=['POST'])
+def aggiungi_carico():
+    dati = carica_dati()
+    nuovo = request.json
+    nuovo["timestamp"] = datetime.now().isoformat()
+    dati["carichi"].append(nuovo)
+    salva_dati(dati)
+    return '', 204
+
+@app.route('/api/giacenze')
+def giacenze():
+    sede = request.args.get("sede")
+    dati = carica_dati()
+    giacenza = {art[0]: 0 for art in ARTICOLI}
+
+    for carico in dati["carichi"]:
+        if carico["struttura"] == sede:
+            for articolo in giacenza:
+                giacenza[articolo] += carico.get(articolo, 0)
+
+    for consumo in dati["consumi"]:
+        if consumo["struttura"] == sede:
+            for articolo in giacenza:
+                giacenza[articolo] -= consumo.get(articolo, 0)
+
+    return jsonify(giacenza)
+
+@app.route('/api/report')
 def api_report():
-    sede = request.args.get("sede", "").capitalize()
-    mese = request.args.get("mese")
-    if sede not in ["Prati", "Trastevere"]:
-        return jsonify({"error": "Sede non valida"}), 400
-    if not mese:
-        return jsonify({"error": "Mese mancante"}), 400
+    sede = request.args.get("sede")
+    mese = request.args.get("mese")  # Formato: YYYY-MM
+
     dati = carica_dati()
     totale = 0
-    for carico in dati["carichi"]:
-        if carico.get("struttura") == sede and carico.get("timestamp", "").startswith(mese):
-            totale += carico.get("totale", 0)
-    return jsonify({"totale_mensile": round(totale, 2)})
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    for carico in dati["carichi"]:
+        if carico["struttura"] == sede and carico.get("timestamp", "").startswith(mese):
+            for nome, prezzo in ARTICOLI:
+                totale += carico.get(nome, 0) * prezzo
+
+    return jsonify({"totale": round(totale, 2)})
+
+if __name__ == '__main__':
+    app.run(debug=True)
