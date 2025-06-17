@@ -1,8 +1,8 @@
 
-from flask import Flask, request, jsonify, Response
-import json, os, io
+from flask import Flask, request, jsonify, Response, send_file
+import json
+import os
 from datetime import datetime
-import csv
 
 app = Flask(__name__)
 DATA_FILE = "data.json"
@@ -12,70 +12,103 @@ if not os.path.exists(DATA_FILE):
         json.dump({"consumi": [], "carichi": []}, f)
 
 def carica_dati():
-    with open(DATA_FILE) as f:
+    with open(DATA_FILE, "r") as f:
         return json.load(f)
 
 def salva_dati(dati):
     with open(DATA_FILE, "w") as f:
-        json.dump(dati, f)
+        json.dump(dati, f, indent=2)
+
+PREZZI = {
+    "bianche_matrimoniali": 0.90,
+    "bianche_singole": 0.80,
+    "bambu_matrimoniali": 1.20,
+    "bambu_singole": 1.00,
+    "federe": 0.60,
+    "bidet": 0.40,
+    "viso": 0.60,
+    "doccia": 1.20,
+    "tappeto": 0.70,
+    "cialde": 0.00,
+    "bevande": 0.00,
+    "dolci": 0.00,
+    "salati": 0.00
+}
 
 @app.route("/")
-def index():
-    return open("index.html").read()
+def home():
+    return send_file("index.html")
 
 @app.route("/inserisci")
-def inserisci(): return open("inserisci.html").read()
+def inserisci():
+    return send_file("inserisci.html")
 
 @app.route("/carichi")
-def carichi(): return open("carichi.html").read()
+def carichi():
+    return send_file("carichi.html")
 
 @app.route("/magazzino")
-def magazzino(): return open("magazzino.html").read()
+def magazzino():
+    return send_file("magazzino.html")
 
 @app.route("/report")
-def report(): return open("report.html").read()
+def report():
+    return send_file("report.html")
 
 @app.route("/api/consumi", methods=["POST"])
-def api_consumi():
-    dati = carica_dati()
-    nuovi = request.json
-    dati["consumi"].append(nuovi)
-    salva_dati(dati)
+def salva_consumi():
+    dati = request.json
+    struttura = dati.get("struttura", "").strip()
+    if not struttura:
+        return jsonify({"error": "Struttura mancante"}), 400
+    tutti_dati = carica_dati()
+    dati["timestamp"] = datetime.now().isoformat()
+    tutti_dati["consumi"].append(dati)
+    salva_dati(tutti_dati)
     return jsonify({"ok": True})
 
 @app.route("/api/carichi", methods=["POST"])
-def api_carichi():
-    dati = carica_dati()
-    nuovi = request.json
-    dati["carichi"].append(nuovi)
-    salva_dati(dati)
-    return jsonify({"ok": True})
+def salva_carichi():
+    dati = request.json
+    struttura = dati.get("struttura", "").strip()
+    if not struttura:
+        return jsonify({"error": "Struttura mancante"}), 400
+    dati["timestamp"] = datetime.now().isoformat()
+    dati["totale"] = sum(dati.get(k, 0) * PREZZI.get(k, 0) for k in PREZZI)
+    tutti_dati = carica_dati()
+    tutti_dati["carichi"].append(dati)
+    salva_dati(tutti_dati)
+    return jsonify({"ok": True, "totale": dati["totale"]})
 
 @app.route("/api/giacenze")
-def giacenze():
-    sede = request.args.get("sede", "")
+def api_giacenze():
+    sede = request.args.get("sede", "").capitalize()
+    if sede not in ["Prati", "Trastevere"]:
+        return jsonify({"error": "Sede non valida"}), 400
     dati = carica_dati()
-    articoli = ["bianche_matrimoniali"]
+    articoli = list(PREZZI.keys())
     giacenze = {}
-    for a in articoli:
-        carico = sum(c.get(a,0) for c in dati["carichi"] if c.get("struttura")==sede)
-        consumo = sum(c.get(a,0) for c in dati["consumi"] if c.get("struttura")==sede)
-        giacenze[a] = carico - consumo
+    for articolo in articoli:
+        carico = sum(c.get(articolo, 0) for c in dati["carichi"] if c.get("struttura") == sede)
+        consumo = sum(c.get(articolo, 0) for c in dati["consumi"] if c.get("struttura") == sede)
+        giacenze[articolo] = carico - consumo
     return jsonify(giacenze)
 
-@app.route("/export-csv")
-def export_csv():
-    sede = request.args.get("sede", "")
+@app.route("/api/report")
+def api_report():
+    sede = request.args.get("sede", "").capitalize()
+    mese = request.args.get("mese")
+    if sede not in ["Prati", "Trastevere"]:
+        return jsonify({"error": "Sede non valida"}), 400
+    if not mese:
+        return jsonify({"error": "Mese mancante"}), 400
     dati = carica_dati()
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["Data", "Struttura", "Articolo", "Quantità"])
-    for r in dati["carichi"]:
-        if r.get("struttura") == sede:
-            for k in r:
-                if k != "struttura":
-                    writer.writerow([datetime.now().strftime("%Y-%m-%d"), sede, k, r[k]])
-    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-Disposition": "attachment; filename=report.csv"})
+    totale = 0
+    for carico in dati["carichi"]:
+        if carico.get("struttura") == sede and carico.get("timestamp", "").startswith(mese):
+            totale += carico.get("totale", 0)
+    return jsonify({"totale_mensile": round(totale, 2)})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
