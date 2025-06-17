@@ -1,1 +1,90 @@
-<h1>Magazzino</h1>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Magazzino</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      font-size: 26px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      font-size: 16px;
+      text-align: center;
+    }
+    select {
+      font-size: 18px;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Magazzino</h1>
+
+  <label for="struttura">Struttura:</label>
+  <select id="struttura" onchange="caricaMagazzino()">
+    <option value="Prati">Prati</option>
+    <option value="Trastevere">Trastevere</option>
+  </select>
+
+  <table id="tabella">
+    <thead>
+      <tr>
+        <th>Articolo</th>
+        <th>Quantità</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const nomiArticoli = {
+      bianche_matrimoniali: "Lenzuolo Bianco Matrimoniale",
+      bianche_singole: "Lenzuolo Bianco Singolo",
+      bambu_matrimoniali: "Lenzuolo BAMBU Matrimoniale",
+      bambu_singole: "Lenzuolo BAMBU Singolo",
+      federe: "Fodere BAMBU",
+      bidet: "Bidet",
+      viso: "Viso",
+      doccia: "Telo Doccia",
+      tappeto: "Tappeto Spugna",
+      cialde: "Cialde",
+      bevande: "Bevande",
+      dolci: "Snack Dolci",
+      salati: "Snack Salati"
+    };
+
+    function caricaMagazzino() {
+      const sede = document.getElementById("struttura").value;
+      fetch(`/api/giacenze?sede=${sede}`)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.querySelector("#tabella tbody");
+          tbody.innerHTML = "";
+          for (let chiave in nomiArticoli) {
+            const riga = document.createElement("tr");
+            riga.innerHTML = `
+              <td>${nomiArticoli[chiave]}</td>
+              <td>${data[chiave]}</td>
+            `;
+            tbody.appendChild(riga);
+          }
+        })
+        .catch(() => alert("Errore nel caricamento del magazzino."));
+    }
+
+    window.onload = caricaMagazzino;
+  </script>
+</body>
+</html>
