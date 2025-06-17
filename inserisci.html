@@ -1,1 +1,108 @@
-<h1>Inserisci Consumi</h1>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Inserisci Consumi</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            font-size: 18px;
+            padding: 30px;
+        }
+        label, select, input {
+            display: block;
+            margin: 10px 0;
+        }
+        .articolo {
+            margin-bottom: 15px;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .controls input {
+            width: 60px;
+            text-align: center;
+        }
+        button {
+            padding: 8px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Inserisci Consumi</h1>
+    <form id="form">
+        <label>Struttura:
+            <select name="struttura">
+                <option>Prati</option>
+                <option>Trastevere</option>
+            </select>
+        </label>
+
+        <div id="articoli-container"></div>
+
+        <button type="submit">Invia Consumi</button>
+    </form>
+
+    <script>
+        const articoli = [
+            "bianche_matrimoniali", "bianche_singole", "bambu_matrimoniali", "bambu_singole",
+            "federe", "bidet", "viso", "doccia", "tappeto",
+            "cialde", "bevande", "dolci", "salati"
+        ];
+
+        const container = document.getElementById("articoli-container");
+
+        articoli.forEach(nome => {
+            const div = document.createElement("div");
+            div.className = "articolo";
+
+            const label = document.createElement("label");
+            label.innerText = nome.replaceAll("_", " ").toUpperCase();
+
+            const controls = document.createElement("div");
+            controls.className = "controls";
+
+            const minus = document.createElement("button");
+            minus.type = "button";
+            minus.innerText = "-";
+
+            const input = document.createElement("input");
+            input.type = "number";
+            input.name = nome;
+            input.value = 0;
+
+            const plus = document.createElement("button");
+            plus.type = "button";
+            plus.innerText = "+";
+
+            minus.onclick = () => {
+                input.value = Math.max(0, parseInt(input.value) - 1);
+            };
+            plus.onclick = () => {
+                input.value = parseInt(input.value) + 1;
+            };
+
+            controls.append(minus, input, plus);
+            div.append(label, controls);
+            container.append(div);
+        });
+
+        document.getElementById("form").onsubmit = async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const dati = Object.fromEntries(new FormData(form));
+            articoli.forEach(a => dati[a] = parseInt(dati[a] || 0));
+            const res = await fetch("/api/consumi", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dati)
+            });
+            if (res.ok) alert("Consumi salvati!");
+            else alert("Errore nel salvataggio.");
+        };
+    </script>
+</body>
+</html>
