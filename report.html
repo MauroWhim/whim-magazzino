@@ -1,1 +1,65 @@
-<h1>Report Mensile</h1>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Report Mensile</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      font-size: 26px;
+    }
+    label, select, button {
+      font-size: 18px;
+      margin-right: 10px;
+    }
+    #totale {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Report Mensile</h1>
+
+  <label for="mese">Mese:</label>
+  <select id="mese">
+    <option value="2025-06">Giugno 2025</option>
+    <option value="2025-05">Maggio 2025</option>
+    <option value="2025-04">Aprile 2025</option>
+  </select>
+
+  <label for="struttura">Struttura:</label>
+  <select id="struttura">
+    <option value="Prati">Prati</option>
+    <option value="Trastevere">Trastevere</option>
+  </select>
+
+  <button onclick="generaReport()">Genera</button>
+
+  <div id="totale">Totale: €0,00</div>
+
+  <script>
+    function generaReport() {
+      const mese = document.getElementById("mese").value;
+      const sede = document.getElementById("struttura").value;
+
+      fetch(`/api/report?mese=${mese}&sede=${sede}`)
+        .then(res => res.json())
+        .then(data => {
+          const euro = new Intl.NumberFormat('it-IT', {
+            style: 'currency', currency: 'EUR'
+          }).format(data.totale || 0);
+          document.getElementById("totale").textContent = "Totale: " + euro;
+        })
+        .catch(() => {
+          document.getElementById("totale").textContent = "Errore nel caricamento del report";
+        });
+    }
+  </script>
+</body>
+</html>
