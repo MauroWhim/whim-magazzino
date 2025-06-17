@@ -1,1 +1,150 @@
-<h1>Registra Carichi</h1>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Registra Carichi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      font-size: 28px;
+    }
+    label, select {
+      font-size: 18px;
+    }
+    .item {
+      margin: 10px 0;
+    }
+    input[type="number"] {
+      width: 60px;
+      font-size: 18px;
+      text-align: center;
+    }
+    .buttons {
+      display: inline-block;
+      margin: 0 10px;
+    }
+    .totale {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Registra Carichi</h1>
+
+  <label for="struttura">Struttura:</label>
+  <select id="struttura">
+    <option>Prati</option>
+    <option>Trastevere</option>
+  </select>
+
+  <div id="campi"></div>
+
+  <div class="totale">Totale Carico: €<span id="totale">0.00</span></div>
+
+  <button onclick="inviaCarico()">Registra Carico</button>
+
+  <script>
+    const listino = {
+      bianche_matrimoniali: 0.9,
+      bianche_singole: 0.8,
+      bambu_matrimoniali: 1.2,
+      bambu_singole: 1.0,
+      federe: 0.6,
+      bidet: 0.4,
+      viso: 0.6,
+      doccia: 1.2,
+      tappeto: 0.7,
+      cialde: 0,
+      bevande: 0,
+      dolci: 0,
+      salati: 0
+    };
+
+    const nomiArticoli = {
+      bianche_matrimoniali: "Lenzuolo Bianco Matrimoniale",
+      bianche_singole: "Lenzuolo Bianco Singolo",
+      bambu_matrimoniali: "Lenzuolo BAMBU Matrimoniale",
+      bambu_singole: "Lenzuolo BAMBU Singolo",
+      federe: "Fodere BAMBU",
+      bidet: "Bidet",
+      viso: "Viso",
+      doccia: "Telo Doccia",
+      tappeto: "Tappeto Spugna",
+      cialde: "Cialde",
+      bevande: "Bevande",
+      dolci: "Snack Dolci",
+      salati: "Snack Salati"
+    };
+
+    const valori = {};
+    const container = document.getElementById("campi");
+
+    function aggiornaTotale() {
+      let totale = 0;
+      for (let k in valori) {
+        totale += valori[k] * listino[k];
+      }
+      document.getElementById("totale").innerText = totale.toFixed(2);
+    }
+
+    for (let k in nomiArticoli) {
+      valori[k] = 0;
+
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `
+        <label>${nomiArticoli[k]}</label>
+        <div class="buttons">
+          <button onclick="cambiaVal('${k}', -1)">-</button>
+          <input type="number" id="${k}" value="0" min="0" onchange="manuale('${k}')">
+          <button onclick="cambiaVal('${k}', 1)">+</button>
+        </div>
+      `;
+      container.appendChild(div);
+    }
+
+    function cambiaVal(articolo, delta) {
+      const campo = document.getElementById(articolo);
+      let val = parseInt(campo.value) || 0;
+      val = Math.max(0, val + delta);
+      campo.value = val;
+      valori[articolo] = val;
+      aggiornaTotale();
+    }
+
+    function manuale(articolo) {
+      const campo = document.getElementById(articolo);
+      valori[articolo] = parseInt(campo.value) || 0;
+      aggiornaTotale();
+    }
+
+    function inviaCarico() {
+      const struttura = document.getElementById("struttura").value;
+      const payload = { struttura, ...valori };
+      fetch("/api/carichi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).then(res => {
+        if (res.ok) {
+          alert("Carico registrato con successo!");
+          location.reload();
+        } else {
+          alert("Errore durante l'invio.");
+        }
+      });
+    }
+  </script>
+</body>
+</html>
