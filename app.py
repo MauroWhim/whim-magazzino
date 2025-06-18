@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 
 DATA_FILE = "data.json"
 
