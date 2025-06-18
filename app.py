@@ -1,14 +1,10 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, render_template, request, redirect, jsonify
 import json
-import os
 from datetime import datetime
 
 app = Flask(__name__)
-DATA_FILE = "data.json"
 
-if not os.path.exists(DATA_FILE):
-    with open(DATA_FILE, "w") as f:
-        json.dump({"carichi": [], "consumi": []}, f)
+DATA_FILE = "data.json"
 
 PREZZI = {
     "bianche_matrimoniali": 0.90,
@@ -16,96 +12,91 @@ PREZZI = {
     "bambu_matrimoniali": 1.20,
     "bambu_singole": 1.00,
     "federe": 0.60,
-    "bidet": 0.40,
     "viso": 0.60,
+    "bidet": 0.40,
     "doccia": 1.20,
     "tappeto": 0.70,
     "cialde": 0.22,
-    "bevande": 0.45,
+    "snack_s": 0.31,
     "dolci": 0.06,
-    "salati": 0.31
+    "bevande": 0.45,
 }
 
 def carica_dati():
-    with open(DATA_FILE, "r") as f:
-        return json.load(f)
+    try:
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"carichi": [], "consumi": []}
 
 def salva_dati(dati):
     with open(DATA_FILE, "w") as f:
-        json.dump(dati, f, indent=2)
+        json.dump(dati, f)
 
 @app.route("/")
-def home():
+def index():
     return render_template("index.html")
 
-@app.route("/inserisci")
-def inserisci():
-    return render_template("inserisci.html")
-
-@app.route("/carichi")
+@app.route("/carichi", methods=["GET", "POST"])
 def carichi():
-    return render_template("carichi.html")
+    if request.method == "POST":
+        sede = request.form["sede"]
+        data = datetime.now().strftime("%Y-%m-%d")
+        voci = {k: int(request.form.get(k, 0)) for k in PREZZI}
+        costo = sum(voci[k] * PREZZI[k] for k in PREZZI)
+        record = {"sede": sede, "data": data, "voci": voci, "costo": round(costo, 2)}
+        dati = carica_dati()
+        dati["carichi"].append(record)
+        salva_dati(dati)
+        return redirect("/carichi")
+    return render_template("carichi.html", prezzi=PREZZI)
+
+@app.route("/inserisci", methods=["GET", "POST"])
+def inserisci():
+    if request.method == "POST":
+        sede = request.form["sede"]
+        data = datetime.now().strftime("%Y-%m-%d")
+        voci = {k: int(request.form.get(k, 0)) for k in PREZZI}
+        record = {"sede": sede, "data": data, "voci": voci}
+        dati = carica_dati()
+        dati["consumi"].append(record)
+        salva_dati(dati)
+        return redirect("/inserisci")
+    return render_template("inserisci.html", prezzi=PREZZI)
 
 @app.route("/magazzino")
 def magazzino():
-    return render_template("magazzino.html")
-
-@app.route("/report")
-def report():
-    return render_template("report.html")
-
-@app.route("/api/consumi", methods=["POST"])
-def salva_consumi():
-    dati = request.json
-    tutti = carica_dati()
-    tutti["consumi"].append(dati)
-    salva_dati(tutti)
-    return jsonify(ok=True)
-
-@app.route("/api/carichi", methods=["POST"])
-def salva_carico():
-    dati = request.json
-    tutti = carica_dati()
-    tutti["carichi"].append(dati)
-    salva_dati(tutti)
-    return jsonify(ok=True)
-
-@app.route("/api/giacenze")
-def giacenze():
-    sede = request.args.get("sede")
+    sede = request.args.get("sede", "Prati")
     dati = carica_dati()
-    articoli = PREZZI.keys()
-    giacenze = {}
-    for art in articoli:
-        carico = sum(c.get(art, 0) for c in dati["carichi"] if c.get("struttura") == sede)
-        consumo = sum(c.get(art, 0) for c in dati["consumi"] if c.get("struttura") == sede)
-        giacenze[art] = carico - consumo
-    return jsonify(giacenze)
+    giacenze = {k: 0 for k in PREZZI}
+    for carico in dati["carichi"]:
+        if carico["sede"] == sede:
+            for k in carico["voci"]:
+                giacenze[k] += carico["voci"][k]
+    for consumo in dati["consumi"]:
+        if consumo["sede"] == sede:
+            for k in consumo["voci"]:
+                giacenze[k] -= consumo["voci"][k]
+    return render_template("magazzino.html", sede=sede, giacenze=giacenze)
 
-@app.route("/api/report-mensile")
-def report_mensile():
+@app.route("/report", methods=["GET"])
+def report():
+    dati = carica_dati()
     mese = request.args.get("mese")
     sede = request.args.get("sede")
-    if not mese or not sede:
-        return jsonify({"errore": "Parametri mancanti"}), 400
+    totale = 0
 
-    dati = carica_dati()
-    totale = 0.0
-    for carico in dati["carichi"]:
-        if carico.get("struttura") != sede:
-            continue
-        data_str = carico.get("data")
-        if not data_str:
-            continue
-        try:
-            data = datetime.strptime(data_str[:10], "%Y-%m-%d")
-        except Exception:
-            continue
-        if data.strftime("%Y-%m") != mese:
-            continue
-        for art, prezzo in PREZZI.items():
-            totale += carico.get(art, 0) * prezzo
-    return jsonify({"totale": round(totale, 2)})
+    if mese and sede:
+        for carico in dati["carichi"]:
+            try:
+                data = datetime.strptime(carico["data"][:7], "%Y-%m")
+                mese_dt = datetime.strptime(mese, "%Y-%m")
+                if carico["sede"] == sede and data.year == mese_dt.year and data.month == mese_dt.month:
+                    totale += carico["costo"]
+            except Exception as e:
+                print("Errore data:", e)
+
+    return render_template("report.html", mese=mese, sede=sede, totale=round(totale, 2))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=10000)
