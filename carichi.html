@@ -1,96 +1,150 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <title>Registra Carichi</title>
-  <style>
-    body { font-family: Arial, sans-serif; font-size: 20px; padding: 20px; }
-    input[type='number'] { width: 60px; font-size: 20px; }
-    label { display: block; margin: 10px 0 5px; }
-    .btn { font-size: 20px; padding: 10px 20px; margin-top: 20px; }
-  </style>
+    <meta charset="UTF-8">
+    <title>Registra Carichi</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            font-size: 18px;
+        }
+        label, select, input {
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        input[type="number"] {
+            width: 80px;
+            margin-right: 5px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .descrizione {
+            width: 250px;
+        }
+    </style>
 </head>
 <body>
-  <h2>Registra Carico</h2>
-  <form id="caricoForm">
+    <h1>📦 Registra Carichi</h1>
+
     <label for="struttura">Struttura:</label>
-    <select name="struttura" id="struttura">
-      <option value="Prati">Prati</option>
-      <option value="Trastevere">Trastevere</option>
+    <select id="struttura">
+        <option value="Prati">Prati</option>
+        <option value="Trastevere">Trastevere</option>
     </select>
 
-    <label for="data">Data:</label>
-    <input type="date" name="data" id="data" required><br>
+    <div id="campi"></div>
 
-    <label>Lenzuola Bianche Matrimoniali</label>
-    <input type="number" name="bianche_matrimoniali" value="0">
+    <div><strong>Totale Carico: € <span id="totale">0.00</span></strong></div>
+    <button onclick="inviaCarico()">Salva Carico</button>
 
-    <label>Lenzuola Bianche Singole</label>
-    <input type="number" name="bianche_singole" value="0">
+    <script>
+        const articoli = {
+            bianche_matrimoniali: { nome: "Lenzuolo Bianco Matrimoniale", prezzo: 0.90 },
+            bianche_singole: { nome: "Lenzuolo Bianco Singolo", prezzo: 0.80 },
+            bambu_matrimoniali: { nome: "Lenzuolo BAMBU Matrimoniale", prezzo: 1.20 },
+            bambu_singole: { nome: "Lenzuolo BAMBU Singolo", prezzo: 1.00 },
+            federe: { nome: "Fodere BAMBU", prezzo: 0.60 },
+            bidet: { nome: "Bidet", prezzo: 0.40 },
+            viso: { nome: "Viso", prezzo: 0.60 },
+            doccia: { nome: "Telo Doccia", prezzo: 1.20 },
+            tappeto: { nome: "Tappeto Spugna", prezzo: 0.70 },
+            cialde: { nome: "Cialde", prezzo: 0.22 },
+            salati: { nome: "Snack Salati", prezzo: 0.31 },
+            dolci: { nome: "Snack Dolci", prezzo: 0.06 },
+            bevande: { nome: "Bevande", prezzo: 0.45 }
+        };
 
-    <label>Lenzuola Bambù Matrimoniali</label>
-    <input type="number" name="bambu_matrimoniali" value="0">
+        const campiDiv = document.getElementById("campi");
 
-    <label>Lenzuola Bambù Singole</label>
-    <input type="number" name="bambu_singole" value="0">
+        for (let key in articoli) {
+            const row = document.createElement("div");
+            row.className = "row";
 
-    <label>Federe</label>
-    <input type="number" name="federe" value="0">
+            const label = document.createElement("label");
+            label.className = "descrizione";
+            label.innerText = articoli[key].nome;
 
-    <label>Asciugamano Bidet</label>
-    <input type="number" name="bidet" value="0">
+            const meno = document.createElement("button");
+            meno.innerText = "-";
+            meno.type = "button";
+            meno.onclick = () => {
+                const input = document.getElementById(key);
+                input.value = Math.max(0, parseInt(input.value || 0) - 1);
+                aggiornaTotale();
+            };
 
-    <label>Asciugamano Viso</label>
-    <input type="number" name="viso" value="0">
+            const input = document.createElement("input");
+            input.type = "number";
+            input.min = "0";
+            input.value = "0";
+            input.id = key;
+            input.oninput = aggiornaTotale;
 
-    <label>Telo Doccia</label>
-    <input type="number" name="doccia" value="0">
+            const piu = document.createElement("button");
+            piu.innerText = "+";
+            piu.type = "button";
+            piu.onclick = () => {
+                const input = document.getElementById(key);
+                input.value = parseInt(input.value || 0) + 1;
+                aggiornaTotale();
+            };
 
-    <label>Tappeto Spugna</label>
-    <input type="number" name="tappeto" value="0">
-
-    <label>Cialde</label>
-    <input type="number" name="cialde" value="0">
-
-    <label>Snack Salati</label>
-    <input type="number" name="salati" value="0">
-
-    <label>Snack Dolci</label>
-    <input type="number" name="dolci" value="0">
-
-    <label>Bevande</label>
-    <input type="number" name="bevande" value="0">
-
-    <button class="btn" type="submit">Salva Carico</button>
-  </form>
-
-  <script>
-    const form = document.getElementById('caricoForm');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const data = {};
-      formData.forEach((value, key) => {
-        if (key === "struttura" || key === "data") {
-          data[key] = value;
-        } else {
-          data[key] = parseInt(value) || 0;
+            row.appendChild(label);
+            row.appendChild(meno);
+            row.appendChild(input);
+            row.appendChild(piu);
+            campiDiv.appendChild(row);
         }
-      });
 
-      const response = await fetch('/api/carichi', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+        function aggiornaTotale() {
+            let totale = 0;
+            for (let key in articoli) {
+                const quantita = parseInt(document.getElementById(key).value || 0);
+                totale += quantita * articoli[key].prezzo;
+            }
+            document.getElementById("totale").innerText = totale.toFixed(2);
+        }
 
-      if (response.ok) {
-        alert("Carico salvato correttamente!");
-        form.reset();
-      } else {
-        alert("Errore nel salvataggio!");
-      }
-    });
-  </script>
+        function inviaCarico() {
+            const struttura = document.getElementById("struttura").value;
+            const data = new Date().toISOString().split("T")[0];
+            const payload = { struttura, data };
+
+            for (let key in articoli) {
+                payload[key] = parseInt(document.getElementById(key).value || 0);
+            }
+
+            fetch("/api/carichi", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert("Carico salvato con successo!");
+                location.reload();
+            });
+        }
+    </script>
 </body>
 </html>

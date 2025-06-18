@@ -1,65 +1,71 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <title>Report Mensile</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f4f4f4;
-    }
-    h1 {
-      font-size: 26px;
-    }
-    label, select, button {
-      font-size: 18px;
-      margin-right: 10px;
-    }
-    #totale {
-      margin-top: 20px;
-      font-size: 20px;
-      font-weight: bold;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Report Mensile</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            font-size: 18px;
+        }
+        select, input[type="month"] {
+            font-size: 18px;
+            padding: 8px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #totale {
+            margin-top: 20px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-  <h1>Report Mensile</h1>
+    <h1>📊 Report Mensile Carichi</h1>
+    <label for="mese">Scegli il mese:</label>
+    <input type="month" id="mese">
 
-  <label for="mese">Mese:</label>
-  <select id="mese">
-    <option value="2025-06">Giugno 2025</option>
-    <option value="2025-05">Maggio 2025</option>
-    <option value="2025-04">Aprile 2025</option>
-  </select>
+    <label for="sede">Scegli la sede:</label>
+    <select id="sede">
+        <option value="Prati">Prati</option>
+        <option value="Trastevere">Trastevere</option>
+    </select>
 
-  <label for="struttura">Struttura:</label>
-  <select id="struttura">
-    <option value="Prati">Prati</option>
-    <option value="Trastevere">Trastevere</option>
-  </select>
+    <button onclick="calcolaReport()">Genera Report</button>
 
-  <button onclick="generaReport()">Genera</button>
+    <div id="totale"></div>
 
-  <div id="totale">Totale: €0,00</div>
-
-  <script>
-    function generaReport() {
-      const mese = document.getElementById("mese").value;
-      const sede = document.getElementById("struttura").value;
-
-      fetch(`/api/report?mese=${mese}&sede=${sede}`)
-        .then(res => res.json())
-        .then(data => {
-          const euro = new Intl.NumberFormat('it-IT', {
-            style: 'currency', currency: 'EUR'
-          }).format(data.totale || 0);
-          document.getElementById("totale").textContent = "Totale: " + euro;
-        })
-        .catch(() => {
-          document.getElementById("totale").textContent = "Errore nel caricamento del report";
-        });
-    }
-  </script>
+    <script>
+        function calcolaReport() {
+            const mese = document.getElementById("mese").value;
+            const sede = document.getElementById("sede").value;
+            if (!mese || !sede) {
+                alert("Inserisci mese e sede.");
+                return;
+            }
+            fetch(`/api/report-mensile?mese=${mese}&sede=${sede}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("totale").innerText = `Totale Speso: € ${data.totale.toFixed(2)}`;
+                })
+                .catch(() => {
+                    document.getElementById("totale").innerText = "Errore nel calcolo del report.";
+                });
+        }
+    </script>
 </body>
 </html>
