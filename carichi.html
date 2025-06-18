@@ -4,147 +4,93 @@
   <meta charset="UTF-8">
   <title>Registra Carichi</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f9f9f9;
-    }
-    h1 {
-      font-size: 28px;
-    }
-    label, select {
-      font-size: 18px;
-    }
-    .item {
-      margin: 10px 0;
-    }
-    input[type="number"] {
-      width: 60px;
-      font-size: 18px;
-      text-align: center;
-    }
-    .buttons {
-      display: inline-block;
-      margin: 0 10px;
-    }
-    .totale {
-      margin-top: 20px;
-      font-size: 20px;
-      font-weight: bold;
-    }
-    button {
-      font-size: 18px;
-      padding: 10px 20px;
-      margin-top: 20px;
-    }
+    body { font-family: Arial, sans-serif; font-size: 20px; padding: 20px; }
+    input[type='number'] { width: 60px; font-size: 20px; }
+    label { display: block; margin: 10px 0 5px; }
+    .btn { font-size: 20px; padding: 10px 20px; margin-top: 20px; }
   </style>
 </head>
 <body>
-  <h1>Registra Carichi</h1>
+  <h2>Registra Carico</h2>
+  <form id="caricoForm">
+    <label for="struttura">Struttura:</label>
+    <select name="struttura" id="struttura">
+      <option value="Prati">Prati</option>
+      <option value="Trastevere">Trastevere</option>
+    </select>
 
-  <label for="struttura">Struttura:</label>
-  <select id="struttura">
-    <option>Prati</option>
-    <option>Trastevere</option>
-  </select>
+    <label for="data">Data:</label>
+    <input type="date" name="data" id="data" required><br>
 
-  <div id="campi"></div>
+    <label>Lenzuola Bianche Matrimoniali</label>
+    <input type="number" name="bianche_matrimoniali" value="0">
 
-  <div class="totale">Totale Carico: €<span id="totale">0.00</span></div>
+    <label>Lenzuola Bianche Singole</label>
+    <input type="number" name="bianche_singole" value="0">
 
-  <button onclick="inviaCarico()">Registra Carico</button>
+    <label>Lenzuola Bambù Matrimoniali</label>
+    <input type="number" name="bambu_matrimoniali" value="0">
+
+    <label>Lenzuola Bambù Singole</label>
+    <input type="number" name="bambu_singole" value="0">
+
+    <label>Federe</label>
+    <input type="number" name="federe" value="0">
+
+    <label>Asciugamano Bidet</label>
+    <input type="number" name="bidet" value="0">
+
+    <label>Asciugamano Viso</label>
+    <input type="number" name="viso" value="0">
+
+    <label>Telo Doccia</label>
+    <input type="number" name="doccia" value="0">
+
+    <label>Tappeto Spugna</label>
+    <input type="number" name="tappeto" value="0">
+
+    <label>Cialde</label>
+    <input type="number" name="cialde" value="0">
+
+    <label>Snack Salati</label>
+    <input type="number" name="salati" value="0">
+
+    <label>Snack Dolci</label>
+    <input type="number" name="dolci" value="0">
+
+    <label>Bevande</label>
+    <input type="number" name="bevande" value="0">
+
+    <button class="btn" type="submit">Salva Carico</button>
+  </form>
 
   <script>
-    const listino = {
-      bianche_matrimoniali: 0.9,
-      bianche_singole: 0.8,
-      bambu_matrimoniali: 1.2,
-      bambu_singole: 1.0,
-      federe: 0.6,
-      bidet: 0.4,
-      viso: 0.6,
-      doccia: 1.2,
-      tappeto: 0.7,
-      cialde: 0,
-      bevande: 0,
-      dolci: 0,
-      salati: 0
-    };
-
-    const nomiArticoli = {
-      bianche_matrimoniali: "Lenzuolo Bianco Matrimoniale",
-      bianche_singole: "Lenzuolo Bianco Singolo",
-      bambu_matrimoniali: "Lenzuolo BAMBU Matrimoniale",
-      bambu_singole: "Lenzuolo BAMBU Singolo",
-      federe: "Fodere BAMBU",
-      bidet: "Bidet",
-      viso: "Viso",
-      doccia: "Telo Doccia",
-      tappeto: "Tappeto Spugna",
-      cialde: "Cialde",
-      bevande: "Bevande",
-      dolci: "Snack Dolci",
-      salati: "Snack Salati"
-    };
-
-    const valori = {};
-    const container = document.getElementById("campi");
-
-    function aggiornaTotale() {
-      let totale = 0;
-      for (let k in valori) {
-        totale += valori[k] * listino[k];
-      }
-      document.getElementById("totale").innerText = totale.toFixed(2);
-    }
-
-    for (let k in nomiArticoli) {
-      valori[k] = 0;
-
-      const div = document.createElement("div");
-      div.className = "item";
-      div.innerHTML = `
-        <label>${nomiArticoli[k]}</label>
-        <div class="buttons">
-          <button onclick="cambiaVal('${k}', -1)">-</button>
-          <input type="number" id="${k}" value="0" min="0" onchange="manuale('${k}')">
-          <button onclick="cambiaVal('${k}', 1)">+</button>
-        </div>
-      `;
-      container.appendChild(div);
-    }
-
-    function cambiaVal(articolo, delta) {
-      const campo = document.getElementById(articolo);
-      let val = parseInt(campo.value) || 0;
-      val = Math.max(0, val + delta);
-      campo.value = val;
-      valori[articolo] = val;
-      aggiornaTotale();
-    }
-
-    function manuale(articolo) {
-      const campo = document.getElementById(articolo);
-      valori[articolo] = parseInt(campo.value) || 0;
-      aggiornaTotale();
-    }
-
-    function inviaCarico() {
-      const struttura = document.getElementById("struttura").value;
-      const payload = { struttura, ...valori };
-      fetch("/api/carichi", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      }).then(res => {
-        if (res.ok) {
-          alert("Carico registrato con successo!");
-          location.reload();
+    const form = document.getElementById('caricoForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const data = {};
+      formData.forEach((value, key) => {
+        if (key === "struttura" || key === "data") {
+          data[key] = value;
         } else {
-          alert("Errore durante l'invio.");
+          data[key] = parseInt(value) || 0;
         }
       });
-    }
+
+      const response = await fetch('/api/carichi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        alert("Carico salvato correttamente!");
+        form.reset();
+      } else {
+        alert("Errore nel salvataggio!");
+      }
+    });
   </script>
 </body>
 </html>
