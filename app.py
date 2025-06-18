@@ -100,5 +100,5 @@ def report_mensile():
             totale += carico.get(articolo, 0) * prezzo
     return jsonify({"totale": round(totale, 2)})
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
